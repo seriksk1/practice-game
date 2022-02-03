@@ -1,78 +1,60 @@
 import Pokemon from './pokemon.js';
-import random from './utils.js';
+import { getElById, random, countClicks, changeButtonName } from './utils.js';
+import { pokemons } from './pokemons.js';
+
+const $logs = document.querySelector('#logs');
+const pokemonsVariants = [...pokemons];
+
+function getRandomPlayer() {
+    return pokemonsVariants.splice(random(pokemonsVariants.length) - 1, 1)[0];
+}
 
 const player1 = new Pokemon({
-    name: 'Pickachu',
-    hp: 500,
-    type: 'electric',
+    ...getRandomPlayer(),
     selectors: 'character',
 });
 
 const player2 = new Pokemon({
-    name: 'Charmander',
-    hp: 350,
-    type: 'fire',
+    ...getRandomPlayer(),
     selectors: 'enemy',
 });
 
-function getElById(id) {
-    return document.getElementById(id);
-}
+const $contol = document.querySelector('.control');
 
-const btn = getElById('btn-kick');
-const btn2 = getElById('btn-kick-2');
-const $logs = document.querySelector('#logs');
+player1.attacks.forEach(item => {
+    const $btn = document.createElement('button');
+    $btn.classList.add('button');
+    $btn.textContent = `${item.name} (${item.maxCount})`;
 
-function countClicks(limitClicks) {
-    return () => limitClicks > 0 ? --limitClicks : limitClicks = 0;
-}
+    const attack = kick(item, $btn);
 
-const btn1_RemainClicks = countClicks(7);
-const btn2_RemainClicks = countClicks(7);
+    $btn.addEventListener('click', attack);
 
-const changeButtonName = (btn, clicks) => {
-    let btnName = btn.textContent.split(' ');
+    $contol.appendChild($btn);
+});
 
-    btnName.splice(btnName.indexOf('('), 1);
+function kick({ minDamage: player1_MinDamage, maxDamage: player1_MaxDamage, maxCount }, btn) {
+    const remainClicks = countClicks(maxCount);
 
-    return `${btnName.join(' ')} (${clicks})`;
-}
+    return () => {
+        console.log('Kick');
 
-btn.addEventListener('click', function () {
-    console.log('Kick');
+        const { minDamage: player2_MinDamage, maxDamage: player2_MaxDamage } = player2.attacks[random(player2.attacks.length) - 1];
 
-    generateLog(player1, player2, player1.changeHP(random(30, 60)));
-    generateLog(player2, player1, player2.changeHP(random(30, 60)));
+        generateLog(player2, player1, player2.changeHP(random(player1_MinDamage, player1_MaxDamage)));
+        generateLog(player1, player2, player1.changeHP(random(player2_MinDamage, player2_MaxDamage)));
 
-    let remainClicks = btn1_RemainClicks();
+        const clicksNumber = remainClicks();
 
-    btn.textContent = changeButtonName(btn, remainClicks);
+        btn.textContent = changeButtonName(btn, clicksNumber);
 
-    if (!remainClicks) btn.disabled = true;
+        if (!clicksNumber) btn.disabled = true;
 
-    if (!player1.hp.current || !player2.hp.current) {
-        btn.disabled = true;
-        btn2.disabled = true;
+        if (!player1.hp.current || !player2.hp.current) {
+            document.querySelectorAll('.button').forEach(button => button.disabled = true);
+        }
     }
-})
-
-btn2.addEventListener('click', function () {
-    console.log('Kick-2');
-
-    generateLog(player1, player2, player1.changeHP(random(40)));
-    generateLog(player2, player1, player2.changeHP(random(40)));
-
-    let remainClicks = btn2_RemainClicks();
-
-    btn2.textContent = changeButtonName(btn2, remainClicks);
-
-    if (!remainClicks) btn2.disabled = true;
-
-    if (!player1.hp.current || !player2.hp.current) {
-        btn.disabled = true;
-        btn2.disabled = true;
-    }
-})
+}
 
 function generateLog(character, enemy, count) {
     const logs = [
@@ -99,8 +81,10 @@ function generateLog(character, enemy, count) {
 function init() {
     console.log('Start Game!');
 
-    btn.textContent += ' (7)';
-    btn2.textContent += ' (7)';
+    document.querySelector('.character img').src = player1.img;
+    document.querySelector('.enemy img').src = player2.img;
+    getElById('name-character').textContent = player1.name;
+    getElById('name-enemy').textContent = player2.name;
 }
 
 init();
